@@ -56,14 +56,21 @@ export const ngTestIdentifier: RuleModule<MessageIds, Options, RuleListener> = {
     const tagName = context.options[0]?.tagName || "data-test";
 
     return {
-      [`Element$1:not([name=/ng-container|ng-template|router-outlet/])`](element: TmplAstElement) {
-        if (element.attributes.some((attr) => attr.name === tagName)) {
+      [`:not(Element$1[name="svg"]) Element$1:not([name=/ng-container|ng-template|ng-content|router-outlet/])`](
+        element: TmplAstElement
+      ) {
+        if (
+          element.attributes.some((attr) => attr.name === tagName) ||
+          (element.name.startsWith(":") && element.name !== ":svg:svg")
+        ) {
           return;
         }
 
         const loc = parserServices.convertNodeSourceSpanToLoc(element.sourceSpan);
 
-        const insertOffset = element.sourceSpan.start.offset + element.name.length + 1;
+        const insertOffset =
+          element.sourceSpan.start.offset +
+          (element.name === ":svg:svg" ? 4 : element.name.length + 1);
 
         context.report({
           loc,

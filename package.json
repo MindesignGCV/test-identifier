@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-ng-test-identifier",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "add test identifier attribute to angular components",
   "main": "dist/src/main.js",
   "scripts": {
