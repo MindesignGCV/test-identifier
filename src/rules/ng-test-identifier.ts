@@ -11,13 +11,15 @@ type Options = readonly [
       readonly tagName?: string;
     }
 ];
-type MessageIds = "ngTestIdentifier";
+type MessageIds = "ngTestIdentifier" | "ngTestIdentifierUnique";
+
+const values = new Map<string, string>();
 
 export const ngTestIdentifier: RuleModule<MessageIds, Options, RuleListener> = {
   meta: {
     type: "suggestion",
     docs: {
-      description: "Ensures that the `data-test` attribute is present",
+      description: "Ensures that the test identifer attribute (`data-test` by default) is present and unique",
       recommended: "error",
     },
     fixable: "code",
@@ -46,7 +48,8 @@ export const ngTestIdentifier: RuleModule<MessageIds, Options, RuleListener> = {
       },
     ],
     messages: {
-      ngTestIdentifier: "The `data-test` attribute is required.",
+      ngTestIdentifier: "The test identifier attribute (`data-test` by default) is required.",
+      ngTestIdentifierUnique: "The identifier attribute (`data-test` by default) should be unique.",
     },
   },
   create(context) {
@@ -54,17 +57,44 @@ export const ngTestIdentifier: RuleModule<MessageIds, Options, RuleListener> = {
     const size = context.options[0]?.randomTextOptions?.length || 8;
     const alphabet = context.options[0]?.randomTextOptions?.alphabet || urlAlphabet;
     const tagName = context.options[0]?.tagName || "data-test";
+    const fileName = context.getPhysicalFilename ? context.getPhysicalFilename() : context.getFilename();
+
+    values.forEach((value, key) => {
+      if (value === fileName) {
+        values.delete(key);
+      }
+    });
 
     return {
-      [`:not(Element$1[name="svg"]) Element$1:not([name=/ng-container|ng-template|ng-content|router-outlet/])`](
+      [`:not(Element$1[name="svg"]) Element$1:not([name=/ng-container|ng-template|ng-content/])`](
         element: TmplAstElement
       ) {
-        if (
-          element.attributes.some((attr) => attr.name === tagName) ||
-          (element.name.startsWith(":") && element.name !== ":svg:svg")
-        ) {
+        if (element.name.startsWith(":") && element.name !== ":svg:svg") {
           return;
         }
+
+        const attr = element.attributes.find((attr) => attr.name === tagName);
+        if (attr) {
+          if (values.has(attr.value)) {
+            const loc = parserServices.convertNodeSourceSpanToLoc(attr.sourceSpan);
+
+            context.report({
+              loc,
+              messageId: "ngTestIdentifierUnique",
+              fix: (fixer) => {
+                return fixer.replaceTextRange(
+                  [attr.sourceSpan.start.offset, attr.sourceSpan.end.offset],
+                  `${tagName}="${customAlphabet(alphabet, size)()}"`
+                );
+              },
+            });
+          }
+
+          values.set(attr.value, fileName);
+
+          return;
+        }
+
 
         const loc = parserServices.convertNodeSourceSpanToLoc(element.sourceSpan);
 

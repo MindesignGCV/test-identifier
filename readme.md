@@ -1,8 +1,8 @@
 ### ng-test-identifier
 
-ESLint rule to make sure that all elements have a test identifier. (`data-test` attribute by default)
+ESLint rule to make sure that all elements have an unique test identifier. (`data-test` attribute by default)
 
-When running eslint with `--fix` option, this rule adds `data-test` attribute with random value for all elements (except `ng-container`/`router-outlet`/`ng-template`).
+When running eslint with `--fix` option, this rule adds `data-test` attribute with random value for all elements (except `ng-container`/`ng-content`/`ng-template`).
 
 Random value is generated using `nanoid`, and the length and alphabet are configurable.
 
